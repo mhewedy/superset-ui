@@ -58,7 +58,7 @@ import {
   formatAnnotationLabel,
   parseAnnotationOpacity,
 } from '../utils/annotation';
-import { getChartPadding } from '../utils/series';
+import { currentSeries, getChartPadding } from '../utils/series';
 import { OpacityEnum, TIMESERIES_CONSTANTS } from '../constants';
 
 export function transformSeries(
@@ -173,16 +173,17 @@ export function transformSeries(
     // @ts-ignore
     type: plotType,
     smooth: seriesType === 'smooth',
+    triggerLineEvent: true,
     // @ts-ignore
     step: ['start', 'middle', 'end'].includes(seriesType as string) ? seriesType : undefined,
     stack: stackId,
     lineStyle,
-    areaStyle: {
-      opacity:
-        forecastSeries.type === ForecastSeriesEnum.ForecastUpper || area
-          ? opacity * areaOpacity
-          : 0,
-    },
+    areaStyle: area
+      ? {
+          opacity:
+            forecastSeries.type === ForecastSeriesEnum.ForecastUpper ? opacity * areaOpacity : 0,
+        }
+      : undefined,
     emphasis,
     showSymbol,
     symbolSize: markerSize,
@@ -194,9 +195,11 @@ export function transformSeries(
           value: [, numericValue],
           dataIndex,
           seriesIndex,
+          seriesName,
         } = params;
+        const isSelectedLegend = currentSeries.legend === seriesName;
         if (!formatter) return numericValue;
-        if (!stack || !onlyTotal) {
+        if (!stack || !onlyTotal || isSelectedLegend) {
           return formatter(numericValue);
         }
         if (seriesIndex === showValueIndexes[dataIndex]) {
@@ -302,7 +305,7 @@ export function transformEventAnnotation(
     const eventData: MarkLine1DDataItemOption[] = [
       {
         name: label,
-        xAxis: (time as unknown) as number,
+        xAxis: time as unknown as number,
       },
     ];
 
